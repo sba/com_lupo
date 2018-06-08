@@ -2,7 +2,7 @@
 /**
  * @package		Joomla
  * @subpackage	LUPO
- * @copyright   Copyright (C) databauer / Stefan Bauer 
+ * @copyright   Copyright (C) databauer / Stefan Bauer
  * @author		Stefan Bauer
  * @link		http://www.ludothekprogramm.ch
  * @license		License GNU General Public License version 2 or later
@@ -46,6 +46,7 @@ JHtml::_('behavior.tooltip');
 					$('uploadfiles').onclick = function() {
 						uploader.start();
                         jQuery('#processzip').prop('disabled', true);
+                        overlay.showLoading();
 						return false;
 					};
 				},
@@ -59,7 +60,7 @@ JHtml::_('behavior.tooltip');
 					}
 
 					plupload.each(files, function(file) {
-						$('filelist').innerHTML = ' <span id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b></span>';
+						jQuery('filelist').innerHTML = ' <span id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b></span>';
 						jQuery('#upload_percent').html('');
 					});
 				},
@@ -69,10 +70,12 @@ JHtml::_('behavior.tooltip');
 				},
 
 				FileUploaded: function(up, file) {
-					jQuery('#upload_percent').html('<b>100%</b>  <span class="icon-ok"> </span> ' + jQuery("#"+file.id).html());
+					jQuery('#upload_percent').html('<b>100%</b>  <span class="icon-ok"> </span> ' + file.name);
 					jQuery('#processzip').prop('disabled', false);
-					$('filelist').innerHTML = '';
+					jQuery('#uploadfiles').prop('disabled', true);
+					jQuery('filelist').innerHTML = '';
 					uploader.splice();
+                    overlay.hideLoading();
 				},
 
 				Error: function(up, err) {
@@ -85,12 +88,39 @@ JHtml::_('behavior.tooltip');
 						errorMsg = "\nError #" + err.code + ": " + err.message;
 						jQuery('#upload_percent').html(errorMsg);
 					}
+                    overlay.hideLoading();
 				}
 			}
 		});
 
 		uploader.init();
+
+
+        // Add spindle-wheel for upload:
+        var outerDiv = jQuery("#content");
+
+        overlay.getLoadingOverlay()
+            .css("top", outerDiv.position().top - jQuery(window).scrollTop())
+            .css("left", "0")
+            .css("width", "100%")
+            .css("height", "100%")
+            .css("display", "none")
+            .css("margin-top", "-10px");
+
 	});
+
+    var overlay = {
+        getLoadingOverlay: function () {
+            return jQuery("#loading");
+        },
+        showLoading: function () {
+            this.getLoadingOverlay().css("display", "block");
+        },
+        hideLoading: function () {
+            this.getLoadingOverlay().css("display", "none");
+        }
+    };
+
 
 </script>
 
@@ -101,9 +131,20 @@ JHtml::_('behavior.tooltip');
 	#upload_percent {
 		font-size: 120%;
 	}
+
+    #loading {
+        background: rgba(255, 255, 255, .8) url(' <?php echo JHtml::_('image', 'jui/ajax-loader.gif', '', null, true, true) ?>') 50% 15% no-repeat;
+        position: fixed;
+        opacity: 0.8;
+        -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity = 80);
+        filter: alpha(opacity = 80);
+        overflow: hidden;
+    }
+
 </style>
 
 <div id="lupo">
+    <div id="loading" style="top: 153px; left: 0px; width: 100%; height: 100%; display: none; margin-top: -10px;"></div>
 	<div id="container">
 		<a id="pickfiles" href="javascript:;"><button class="btn btn-large">1. <?php echo JText::_("COM_LUPO_ADMIN_SELECT_ZIP")?></button></a> <span id="filelist">Your browser doesn't have Flash, Silverlight or HTML5 support.</span>
 		<br />
